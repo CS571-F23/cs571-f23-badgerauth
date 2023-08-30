@@ -1,24 +1,36 @@
 import { Express } from 'express';
 
 import { CS571Route } from "@cs571/f23-api-middleware/src/interfaces/route";
+import { CS571DbConnector } from '../services/db-connector';
 
 export class CS571VerifyBidRoute implements CS571Route {
 
     public static readonly ROUTE_NAME: string = '/verify-bid';
 
+    private readonly connector: CS571DbConnector;
+
+    public constructor(connector: CS571DbConnector) {
+        this.connector = connector
+    }
+
     public addRoute(app: Express): void {
         app.get(CS571VerifyBidRoute.ROUTE_NAME, (req, res) => {
-            // check if req.header('Origin') matches an allowed origin
-            if (req.header('X-CS571-ID') === 'bid_abc123' || req.header('X-CS571-ID') === 'bid_fde987') {
-                res.status(200).send({
-                    name: "you are cool!"
-                });
+            const xid = req.header('X-CS571-ID')
+            if (xid) {
+                if (this.connector.isValidBID(xid)) {
+                    res.status(200).send({
+                        name: "Known"
+                    });
+                } else {
+                    res.status(401).send({
+                        msg: 'That is not a valid Badger ID!'
+                    })
+                }
             } else {
-                res.status(200).send({
-                    name: "unknown"
-                });
+                res.status(400).send({
+                    msg: 'Invalid request body'
+                })
             }
-            
         })
     }
 

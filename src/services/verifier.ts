@@ -50,7 +50,7 @@ export class CS571Verifier {
                 this.jwtSecret,
                 (err: any, decoded: any) => err ? 
                     resolve(undefined) : 
-                    resolve(decoded)
+                    resolve(decoded.email)
             )
         );
     }

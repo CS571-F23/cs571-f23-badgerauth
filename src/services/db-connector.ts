@@ -1,21 +1,22 @@
 
-import { DataTypes, Sequelize, Model } from "sequelize";
+import { DataTypes, Sequelize, ModelStatic } from "sequelize";
 import BadgerAuthSecretConfig from "../model/configs/badgerauth-secret-config";
 import BadgerAuthPublicConfig from "../model/configs/badgerauth-public-config";
 import { CS571Config } from "@cs571/f23-api-middleware";
+import { BadgerId } from "../model/badger-id";
 
 export class CS571DbConnector {
 
-    public static BadgerId: Model;
+    private badgerIdTable!: ModelStatic<any>;
 
-    private config: CS571Config<BadgerAuthPublicConfig, BadgerAuthSecretConfig>;
+    private cachedIds: string[]
+    private readonly sequelize: Sequelize
+    private readonly config: CS571Config<BadgerAuthPublicConfig, BadgerAuthSecretConfig>;
 
     public constructor(config: CS571Config<BadgerAuthPublicConfig, BadgerAuthSecretConfig>) {
+        this.cachedIds = [];
         this.config = config;
-    }
-
-    public async init() {
-        const sequelize = new Sequelize(
+        this.sequelize = new Sequelize(
             'badgerauth_dev',
             this.config.SECRET_CONFIG.SQL_CONN_USER,
             this.config.SECRET_CONFIG.SQL_CONN_PASS,
@@ -25,23 +26,19 @@ export class CS571DbConnector {
                 dialect: 'mysql'
             }
         );
-        await sequelize.authenticate();
-        const BID = await sequelize.define("BadgerId", {
-            id: {
-                type: DataTypes.INTEGER,
-                autoIncrement: true,
+    }
+
+    public async init() {
+        await this.sequelize.authenticate();
+        this.badgerIdTable = await this.sequelize.define("BadgerId", {
+            bid: {
+                type: DataTypes.STRING(68), // bid_ + 64 chars
                 primaryKey: true,
                 unique: true,
                 allowNull: false
             },
             email: {
                 type: DataTypes.STRING(255),
-                allowNull: false
-            },
-            bid: {
-                type: DataTypes.STRING(64),
-                
-                unique: true,
                 allowNull: false
             },
             iat: {
@@ -53,13 +50,41 @@ export class CS571DbConnector {
                 allowNull: true
             }
         });
-        await sequelize.sync()
-        await BID.create({
-            email: 'ctnelson2@wisc.edu',
-            bid: 'bid_jdjddd',
-            iat: new Date()
+        await this.sequelize.sync()
+        await this.syncCache();
+    }
+
+    public async createBadgerId(bid: BadgerId): Promise<void> {
+        await this.badgerIdTable.create({
+            email: bid.email,
+            bid: bid.bid,
+            iat: bid.iat,
+            eat: bid.eat
         })
-        await sequelize.sync()
-        console.log('BadgerId table created successfully!');
+        await this.sequelize.sync()
+        await this.syncCache();
+    }
+
+    public async revokeBadgerId(email: string, bid: string): Promise<boolean> {
+        const foundBid = await this.badgerIdTable.findOne({ where: { email, bid }});
+        if (foundBid) {
+            await this.badgerIdTable.destroy({where: { email, bid }});
+            await this.syncCache();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public isValidBID(bid: string): boolean {
+        return this.cachedIds.includes(bid);
+    }
+
+    public async getAllBadgerIds(): Promise<BadgerId[]> {
+        return await this.badgerIdTable.findAll();
+    }
+
+    private async syncCache(): Promise<void> {
+        this.cachedIds = (await this.badgerIdTable.findAll()).map(bid => bid.bid);
     }
 }
