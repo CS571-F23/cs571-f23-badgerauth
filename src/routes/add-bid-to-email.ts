@@ -6,6 +6,7 @@ import { CS571Route } from "@cs571/f23-api-middleware";
 import { CS571Verifier } from '../services/verifier';
 import { CS571DbConnector } from '../services/db-connector';
 import { BadgerId } from '../model/badger-id';
+import { Util } from '../services/util';
 
 export class CS571AddBidToEmailRoute implements CS571Route {
 
@@ -21,17 +22,20 @@ export class CS571AddBidToEmailRoute implements CS571Route {
 
     public addRoute(app: Express): void {
         app.post(CS571AddBidToEmailRoute.ROUTE_NAME, (req, res) => {
-            this.verifier.getEmailFromJWT(req.cookies['badgerauth_manage']).then(email => {
+            this.verifier.getEmailFromJWT(req.cookies['cs571_badgerauth']).then(email => {
                 if (email) {
                     const iat = new Date();
-                    const eat = req.body.eat;
-                    const bid = new BadgerId(email, this.generateBadgerId(), iat, eat);
-                    this.connector.createBadgerId(bid);
-                    res.status(200).send({
-                        email: email,
-                        iat: iat.getTime(),
-                        eat: eat?.getTime(),
-                        bid: bid.bid
+                    const eat = req.body.eat ? new Date(req.body.eat) : undefined;
+                    const nickname = req.body.nickname
+                    const bid = new BadgerId(nickname, email, Util.generateBadgerId(), iat, eat);
+                    this.connector.createBadgerId(bid).then(() => {
+                        res.status(200).send({
+                            nickname: nickname,
+                            email: email,
+                            iat: iat,
+                            eat: eat,
+                            bid: bid.bid
+                        })
                     })
                 } else {
                     res.status(401).send({ msg: "Not a valid session." })
@@ -42,9 +46,5 @@ export class CS571AddBidToEmailRoute implements CS571Route {
 
     public getRouteName(): string {
         return CS571AddBidToEmailRoute.ROUTE_NAME;
-    }
-
-    private generateBadgerId(): string {
-        return "bid_" + crypto.randomBytes(32).toString('hex');
     }
 }

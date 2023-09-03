@@ -3,6 +3,8 @@ export default interface BadgerAuthSecretConfig {
     SQL_CONN_PORT: number;
     SQL_CONN_USER: string;
     SQL_CONN_PASS: string;
+    CAPTCHA_PUBLIC: string;
+    CAPTCHA_PRIVATE: string;
     SESSION_SECRET: string;
     X_CS571_SECRET: string;
     EMAIL_VERIF_SECRET: string;

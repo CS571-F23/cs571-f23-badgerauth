@@ -34,12 +34,15 @@ export class CS571Verifier {
         return sess;
     }
 
-    public checkValidSession(email: string, code: string): boolean {
-        return this.sessions.some((sess) => 
-            sess.email === email &&
+    public getEmailFromSessionCode(code: string): string | undefined {
+        return this.sessions.find((sess) => 
             sess.code === code &&
             !sess.isExpired()
-        );
+        )?.email;
+    }
+
+    public removeSessionCode(code: string): void {
+        this.sessions = this.sessions.filter((sess) => sess.code !== code);
     }
 
     // https://stackoverflow.com/questions/46108249/promises-vs-async-with-jsonwebtokens

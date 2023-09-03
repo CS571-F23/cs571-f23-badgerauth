@@ -19,7 +19,7 @@ export class CS571GetAllBidsRoute implements CS571Route {
 
     public addRoute(app: Express): void {
         app.get(CS571GetAllBidsRoute.ROUTE_NAME, (req, res) => {
-            const secret = req.header('X-CS571-SECRET');
+            const secret: string = String(req.header('X-CS571-SECRET'));
             if (secret === this.config.SECRET_CONFIG.X_CS571_SECRET) {
                 this.connector.getAllBadgerIds().then(bids => res.status(200).send(bids));
             } else {

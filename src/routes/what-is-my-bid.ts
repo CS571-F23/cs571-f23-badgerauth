@@ -3,15 +3,18 @@ import { Express } from 'express';
 import jwt from 'jsonwebtoken';
 
 import { CS571Config, CS571DefaultSecretConfig, CS571Route } from "@cs571/f23-api-middleware";
+import { CS571OriginTracker } from '../services/origin-tracker';
 
 export class CS571WhatIsMyBidRoute implements CS571Route {
 
     public static readonly ROUTE_NAME: string = '/what-is-my-bid';
 
     private config: CS571Config<any, CS571DefaultSecretConfig>;
+    private originator: CS571OriginTracker;
 
-    public constructor(config: CS571Config<any, CS571DefaultSecretConfig>) {
+    public constructor(config: CS571Config<any, CS571DefaultSecretConfig>, originator: CS571OriginTracker) {
         this.config = config;
+        this.originator = originator;
     }
 
     public addRoute(app: Express): void {
@@ -22,7 +25,7 @@ export class CS571WhatIsMyBidRoute implements CS571Route {
                         msg: "You must be logged in to check your Badger ID!"
                     });
                 } else {
-                    console.log(req.cookies.cs571_bid.bid)
+                    this.originator.addOriginIfDNE(String(req.header("Origin")), bid.bid);
                     res.status(200).send(bid); 
                 }
             })

@@ -5,6 +5,7 @@ import { CS571Email } from '../model/emails/email';
 
 export class CS571Emailer {
 
+    public static readonly BULK_DELAY_MS: number = 1000;
     private readonly client: Transporter;
     private readonly config: BadgerAuthSecretConfig;
 
@@ -17,6 +18,12 @@ export class CS571Emailer {
                 pass: this.config.EMAIL_PASS
             }
         });
+    }
+
+    public async bulkEmail(msgs: CS571Email[]) {
+        msgs.forEach((msg: CS571Email, i: number) => {
+            setTimeout(() => this.email(msg), CS571Emailer.BULK_DELAY_MS * i)
+        })
     }
 
     public async email(msg: CS571Email) {

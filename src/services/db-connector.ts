@@ -9,7 +9,7 @@ export class CS571DbConnector {
 
     private badgerIdTable!: ModelStatic<any>;
 
-    private cachedIds: string[]
+    private cachedIds: BadgerId[]
     private readonly sequelize: Sequelize
     private readonly config: CS571Config<BadgerAuthPublicConfig, BadgerAuthSecretConfig>;
 
@@ -37,16 +37,20 @@ export class CS571DbConnector {
                 unique: true,
                 allowNull: false
             },
+            nickname: {
+                type: DataTypes.STRING(128),
+                allowNull: true
+            },
             email: {
                 type: DataTypes.STRING(255),
                 allowNull: false
             },
             iat: {
-                type: DataTypes.TIME,
+                type: DataTypes.DATE,
                 allowNull: false
             },
             eat: {
-                type: DataTypes.TIME,
+                type: DataTypes.DATE,
                 allowNull: true
             }
         });
@@ -54,14 +58,15 @@ export class CS571DbConnector {
         await this.syncCache();
     }
 
+    public async createBadgerIds(bids: BadgerId[]): Promise<void> {
+        await this.badgerIdTable.bulkCreate(bids.map(bid => { return {...bid}}));
+        await this.sequelize.sync();
+        await this.syncCache();
+    }
+
     public async createBadgerId(bid: BadgerId): Promise<void> {
-        await this.badgerIdTable.create({
-            email: bid.email,
-            bid: bid.bid,
-            iat: bid.iat,
-            eat: bid.eat
-        })
-        await this.sequelize.sync()
+        await this.badgerIdTable.create({...bid});
+        await this.sequelize.sync();
         await this.syncCache();
     }
 
@@ -77,7 +82,13 @@ export class CS571DbConnector {
     }
 
     public isValidBID(bid: string): boolean {
-        return this.cachedIds.includes(bid);
+        const foundBid = this.cachedIds.find(cid => cid.bid === bid);
+        return (foundBid !== undefined) && (!foundBid.eat || foundBid.eat.getTime() >= new Date().getTime());
+    }
+
+    
+    public async getBadgerIdsForEmail(email: string): Promise<BadgerId[]> {
+        return await this.badgerIdTable.findAll({where: {email}});
     }
 
     public async getAllBadgerIds(): Promise<BadgerId[]> {
@@ -85,6 +96,6 @@ export class CS571DbConnector {
     }
 
     private async syncCache(): Promise<void> {
-        this.cachedIds = (await this.badgerIdTable.findAll()).map(bid => bid.bid);
+        this.cachedIds = (await this.badgerIdTable.findAll())
     }
 }

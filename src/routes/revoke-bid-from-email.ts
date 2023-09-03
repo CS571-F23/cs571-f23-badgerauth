@@ -18,7 +18,7 @@ export class CS571RevokeBidFromEmailRoute implements CS571Route {
 
     public addRoute(app: Express): void {
         app.post(CS571RevokeBidFromEmailRoute.ROUTE_NAME, (req, res) => {
-            this.verifier.getEmailFromJWT(req.cookies['badgerauth_manage']).then(email => {
+            this.verifier.getEmailFromJWT(req.cookies['cs571_badgerauth']).then(email => {
                 if (email) {
                     const bid = req.body.bid;
                     if (bid) {
