@@ -40,9 +40,9 @@ export class CS571RequestVerifyEmailRoute implements CS571Route {
                                 new CS571ConfirmAddressEmail(sess.email, sess.code)
                             ).then(() => {
                                 res.status(200).cookie('cs571_otp', sess.email, {
-                                    // domain: 'cs571.org', // todo allow switch
+                                    domain: this.config.PUBLIC_CONFIG.IS_REMOTELY_HOSTED ? 'cs571.org' : undefined,
+                                    secure: this.config.PUBLIC_CONFIG.IS_REMOTELY_HOSTED,
                                     sameSite: "lax",
-                                    // secure: true,
                                     httpOnly: false,
                                     maxAge: 900000,
                                 }).send({

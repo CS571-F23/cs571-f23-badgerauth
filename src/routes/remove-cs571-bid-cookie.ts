@@ -1,17 +1,25 @@
 import { Express } from 'express';
 
-import { CS571Route,  } from "@cs571/f23-api-middleware";
+import { CS571Config, CS571Route,  } from "@cs571/f23-api-middleware";
+import BadgerAuthPublicConfig from '../model/configs/badgerauth-public-config';
+import BadgerAuthSecretConfig from '../model/configs/badgerauth-secret-config';
 
 export class CS571RemoveBidCookieRoute implements CS571Route {
 
     public static readonly ROUTE_NAME: string = '/remove-cs571-bid-cookie';
 
+    private readonly config: CS571Config<BadgerAuthPublicConfig, BadgerAuthSecretConfig>;
+
+    public constructor(config: CS571Config<BadgerAuthPublicConfig, BadgerAuthSecretConfig>) {
+        this.config = config;
+    }
+
     public addRoute(app: Express): void {
         app.delete(CS571RemoveBidCookieRoute.ROUTE_NAME, (req, res) => {
             res.status(200).cookie('cs571_bid', "goodbye", {
-                // domain: 'cs571.org', // todo allow switch
-                sameSite: "none",
+                domain: this.config.PUBLIC_CONFIG.IS_REMOTELY_HOSTED ? 'cs571.org' : undefined,
                 secure: true,
+                sameSite: "none",
                 httpOnly: true,
                 maxAge: 1000
             }).send({

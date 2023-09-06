@@ -64,8 +64,8 @@ appBundle.router.addRoutes([
   new CS571GenerateBidsRoute(appBundle.config, db, emailer),
   new CS571GetAllBidsRoute(appBundle.config, db),
   new CS571GetMyBidsRoute(appBundle.config, db),
-  new CS571RemoveBadgerAuthCookieRoute(),
-  new CS571RemoveBidCookieRoute(),
+  new CS571RemoveBadgerAuthCookieRoute(appBundle.config),
+  new CS571RemoveBidCookieRoute(appBundle.config),
   new CS571RequestCookieForBidRoute(appBundle.config, db),
   new CS571RequestVerifyEmailRoute(appBundle.config, emailer, verifier),
   new CS571RevokeBidFromEmailRoute(verifier, db),
@@ -74,5 +74,5 @@ appBundle.router.addRoutes([
 ])
 
 app.listen(appBundle.config.PORT, () => {
-  console.log(`Running at http://localhost:${appBundle.config.PORT}`);
+  console.log(`Running at :${appBundle.config.PORT}`);
 });

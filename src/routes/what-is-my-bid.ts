@@ -26,7 +26,8 @@ export class CS571WhatIsMyBidRoute implements CS571Route {
                     });
                 } else {
                     this.originator.addOriginIfDNE(String(req.header("Origin")), bid.bid);
-                    res.status(200).send(bid); 
+                    // Acceptable risk, our server can only handle so much load!
+                    res.status(200).set('Cache-control', 'private, max-age=60').send(bid); 
                 }
             })
         })

@@ -4,15 +4,18 @@ import jwt from 'jsonwebtoken';
 
 import { CS571Route, CS571Config, CS571DefaultSecretConfig } from "@cs571/f23-api-middleware";
 import { CS571DbConnector } from '../services/db-connector';
+import BadgerAuthPublicConfig from '../model/configs/badgerauth-public-config';
+import BadgerAuthSecretConfig from '../model/configs/badgerauth-secret-config';
+import { BadgerId } from '../model/badger-id';
 
 export class CS571RequestCookieForBidRoute implements CS571Route {
 
     public static readonly ROUTE_NAME: string = '/request-cookie-for-bid';
 
-    private config: CS571Config<any, CS571DefaultSecretConfig>;
+    private config: CS571Config<BadgerAuthPublicConfig, BadgerAuthSecretConfig>;
     private connector: CS571DbConnector;
 
-    public constructor(config: CS571Config<any, CS571DefaultSecretConfig>, connector: CS571DbConnector) {
+    public constructor(config: CS571Config<BadgerAuthPublicConfig, BadgerAuthSecretConfig>, connector: CS571DbConnector) {
         this.config = config;
         this.connector = connector;
     }
@@ -24,15 +27,20 @@ export class CS571RequestCookieForBidRoute implements CS571Route {
 
             if (bid) {
                 if (this.connector.isValidBID(bid)) {
-                    const cookie = jwt.sign({ bid: bid }, this.config.SECRET_CONFIG.SESSION_SECRET, { expiresIn: '365d' });
-                    res.status(200).cookie('cs571_bid', cookie, {
-                        // domain: 'cs571.org', // todo allow switch
-                        sameSite: "none",
-                        secure: true,
-                        httpOnly: true
-                        // set token expir
-                    }).send({
-                        msg: 'Successfully logged in!'
+                    this.connector.getBadgerId(bid).then((bidObj: BadgerId) => {
+                        const EAT_SEC = bidObj.eat ? (
+                            Math.floor((bidObj.eat.getTime() - new Date().getTime()) / 1000)
+                        ) : 60 * 60 * 24 * 180 ;
+                        const cookie = jwt.sign({ bid: bid }, this.config.SECRET_CONFIG.SESSION_SECRET, { expiresIn: `${EAT_SEC}s` });
+                        res.status(200).cookie('cs571_bid', cookie, {
+                            domain: this.config.PUBLIC_CONFIG.IS_REMOTELY_HOSTED ? 'cs571.org' : undefined,
+                            secure: true,
+                            sameSite: "none",
+                            httpOnly: true,
+                            maxAge: EAT_SEC * 1000
+                        }).send({
+                            msg: 'Successfully logged in!'
+                        });
                     });
                 } else {
                     res.status(401).send({

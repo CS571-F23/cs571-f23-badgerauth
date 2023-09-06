@@ -25,7 +25,6 @@ export class CS571DumpOriginsRoute implements CS571Route {
         app.get(CS571DumpOriginsRoute.ROUTE_NAME, (req, res) => {
             const secret: string = String(req.header('X-CS571-SECRET'));
             if (secret === this.config.SECRET_CONFIG.X_CS571_SECRET) {
-                
                 res.status(200).send(Array.from(this.originator.origins).reduce((prev: any, curr: any) => {
                     return {
                         ...prev,

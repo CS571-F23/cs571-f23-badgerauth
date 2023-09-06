@@ -17,7 +17,7 @@ export class CS571DbConnector {
         this.cachedIds = [];
         this.config = config;
         this.sequelize = new Sequelize(
-            'badgerauth_dev',
+            this.config.SECRET_CONFIG.SQL_CONN_DB,
             this.config.SECRET_CONFIG.SQL_CONN_USER,
             this.config.SECRET_CONFIG.SQL_CONN_PASS,
             {
@@ -86,6 +86,9 @@ export class CS571DbConnector {
         return (foundBid !== undefined) && (!foundBid.eat || foundBid.eat.getTime() >= new Date().getTime());
     }
 
+    public async getBadgerId(bid: string): Promise<BadgerId> {
+        return await this.badgerIdTable.findOne({where: {bid}});
+    }
     
     public async getBadgerIdsForEmail(email: string): Promise<BadgerId[]> {
         return await this.badgerIdTable.findAll({where: {email}});
