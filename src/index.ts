@@ -47,7 +47,8 @@ const appBundle = CS571Initializer.init<
     '/revoke-bid-from-email',
     '/verify-bid',
     '/what-is-my-bid'
-  ]
+  ],
+  skipAuth: true
 });
 
 const db = new CS571DbConnector(appBundle.config);
